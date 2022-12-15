@@ -45,16 +45,19 @@ VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("minimal_publisher")
 
   //   m_priv_nh.param<bool>("reduce_data", m_reduce_data, false);
 
+  m_sensor_frame = "velodyne";
   //   m_priv_nh.param<std::string>("sensor_frame", m_sensor_frame, "");
-  //   if (m_sensor_frame.empty())
-  //   {
-  //     ROS_WARN_STREAM("No sensor frame specified");
-  //   }
-  //   m_priv_nh.param<std::string>("map_frame", m_map_frame, "");
-  //   if (m_map_frame.empty())
-  //   {
-  //     ROS_WARN_STREAM("No map frame specified");
-  //   }
+  if (m_sensor_frame.empty())
+  {
+    // ROS_WARN_STREAM("No sensor frame specified"); //TODO
+  }
+
+  m_map_frame = "map";
+  // m_priv_nh.param<std::string>("map_frame", m_map_frame, "");
+  if (m_map_frame.empty())
+  {
+    // ROS_WARN_STREAM("No map frame specified"); //TODO
+  }
 
   std::string raw_points_topic = "velodyne_points";
   std::string aligned_points_topic = "scan_matched_points2";
