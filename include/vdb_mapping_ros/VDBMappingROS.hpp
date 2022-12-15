@@ -12,7 +12,7 @@ VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("minimal_publisher")
       std::make_unique<tf2_ros::Buffer>(this->get_clock());
   m_tf_listener_ =
       std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
-  
+
   m_config.max_range = 15.0;
   m_config.prob_hit = 0.7;
   m_config.prob_miss = 0.4;
@@ -56,83 +56,79 @@ VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("minimal_publisher")
   //     ROS_WARN_STREAM("No map frame specified");
   //   }
 
-  std::string raw_points_topic;
-  std::string aligned_points_topic;
+  std::string raw_points_topic = "velodyne_points";
+  std::string aligned_points_topic = "scan_matched_points2";
   //   m_priv_nh.param<std::string>("raw_points", raw_points_topic, "");
   //   m_priv_nh.param<std::string>("aligned_points", aligned_points_topic, "");
 
+  /*
+      // Setting up remote sources
+      std::vector<std::string> source_ids;
+      m_priv_nh.param<std::vector<std::string> >(
+        "remote_sources", source_ids, std::vector<std::string>());
 
-/*
-    // Setting up remote sources
-    std::vector<std::string> source_ids;
-    m_priv_nh.param<std::vector<std::string> >(
-      "remote_sources", source_ids, std::vector<std::string>());
-
-    for (auto& source_id : source_ids)
-    {
-      std::string remote_namespace;
-      m_priv_nh.param<std::string>(source_id + "/namespace", remote_namespace, "");
-
-      RemoteSource remote_source;
-      m_priv_nh.param<bool>(
-        source_id + "/apply_remote_updates", remote_source.apply_remote_updates, false);
-      m_priv_nh.param<bool>(
-        source_id + "/apply_remote_overwrites", remote_source.apply_remote_overwrites, false);
-
-      if (remote_source.apply_remote_updates)
+      for (auto& source_id : source_ids)
       {
-        remote_source.map_update_sub = m_nh.subscribe(
-          remote_namespace + "/vdb_map_updates", 1, &VDBMappingROS::mapUpdateCallback, this);
-      }
-      if (remote_source.apply_remote_overwrites)
-      {
-        remote_source.map_overwrite_sub = m_nh.subscribe(
-          remote_namespace + "/vdb_map_overwrites", 1, &VDBMappingROS::mapOverwriteCallback, this);
-      }
-      remote_source.get_map_section_client =
-        m_nh.serviceClient<vdb_mapping_msgs::GetMapSection>(remote_namespace + "/get_map_section");
-      m_remote_sources.insert(std::make_pair(source_id, remote_source));
-    }
-*/
-  
-  
-    if (m_publish_updates)
-    {
-      m_map_update_pub = this->create_publisher<std_msgs::msg::String>("vdb_map_updates", 1);
-    }
-    if (m_publish_overwrites)
-    {
-      m_map_overwrite_pub = this->create_publisher<std_msgs::msg::String>("vdb_map_overwrites", 1);
-    }
+        std::string remote_namespace;
+        m_priv_nh.param<std::string>(source_id + "/namespace", remote_namespace, "");
 
-    if (m_apply_raw_sensor_data)
-    {
-      m_sensor_cloud_sub = this->create_subscription<std_msgs::msg::String>(
+        RemoteSource remote_source;
+        m_priv_nh.param<bool>(
+          source_id + "/apply_remote_updates", remote_source.apply_remote_updates, false);
+        m_priv_nh.param<bool>(
+          source_id + "/apply_remote_overwrites", remote_source.apply_remote_overwrites, false);
+
+        if (remote_source.apply_remote_updates)
+        {
+          remote_source.map_update_sub = m_nh.subscribe(
+            remote_namespace + "/vdb_map_updates", 1, &VDBMappingROS::mapUpdateCallback, this);
+        }
+        if (remote_source.apply_remote_overwrites)
+        {
+          remote_source.map_overwrite_sub = m_nh.subscribe(
+            remote_namespace + "/vdb_map_overwrites", 1, &VDBMappingROS::mapOverwriteCallback, this);
+        }
+        remote_source.get_map_section_client =
+          m_nh.serviceClient<vdb_mapping_msgs::GetMapSection>(remote_namespace + "/get_map_section");
+        m_remote_sources.insert(std::make_pair(source_id, remote_source));
+      }
+  */
+
+  if (m_publish_updates)
+  {
+    m_map_update_pub = this->create_publisher<std_msgs::msg::String>("vdb_map_updates", 1);
+  }
+  if (m_publish_overwrites)
+  {
+    m_map_overwrite_pub = this->create_publisher<std_msgs::msg::String>("vdb_map_overwrites", 1);
+  }
+
+  if (m_apply_raw_sensor_data)
+  {
+    m_sensor_cloud_sub = this->create_subscription<std_msgs::msg::String>(
         raw_points_topic, 10, std::bind(&VDBMappingROS::sensorCloudCallback, this, _1));
-      m_aligned_cloud_sub = this->create_subscription<std_msgs::msg::String>(
+    m_aligned_cloud_sub = this->create_subscription<std_msgs::msg::String>(
         aligned_points_topic, 10, std::bind(&VDBMappingROS::alignedCloudCallback, this, _1));
-    }
+  }
 
-    m_visualization_marker_pub =
+  m_visualization_marker_pub =
       this->create_publisher<visualization_msgs::msg::Marker>("vdb_map_visualization", 1);
-    m_pointcloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("vdb_map_pointcloud", 1);
+  m_pointcloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("vdb_map_pointcloud", 1);
 
-    m_map_reset_service =
+  m_map_reset_service =
       this->create_service<std_srvs::srv::Trigger>("vdb_map_reset", std::bind(&VDBMappingROS::mapResetCallback, this, _1, _2));
 
-
-    m_save_map_service_server = 
+  m_save_map_service_server =
       this->create_service<std_srvs::srv::Trigger>("save_map", std::bind(&VDBMappingROS::saveMap, this, _1, _2));
 
-    m_load_map_service_server = 
+  m_load_map_service_server =
       this->create_service<vdb_mapping_msgs::srv::LoadMap>("load_map", std::bind(&VDBMappingROS::loadMap, this, _1, _2));
 
-    m_get_map_section_service =
+  m_get_map_section_service =
       this->create_service<vdb_mapping_msgs::srv::GetMapSection>("get_map_section", std::bind(&VDBMappingROS::getMapSectionCallback, this, _1, _2));
 
-    // m_trigger_map_section_update_service = 
-    //   this->create_service<vdb_mapping_msgs::srv::TriggerMapSectionUpdate>("trigger_map_section_update", std::bind(&VDBMappingROS::triggerMapSectionUpdateCallback, this, _1, _2));
-
+  // m_trigger_map_section_update_service =
+  //   this->create_service<vdb_mapping_msgs::srv::TriggerMapSectionUpdate>("trigger_map_section_update", std::bind(&VDBMappingROS::triggerMapSectionUpdateCallback, this, _1, _2));
 }
 
 template <typename VDBMappingT>
@@ -245,7 +241,6 @@ bool VDBMappingROS<VDBMappingT>::triggerMapSectionUpdateCallback(
 }
 */
 
-
 template <typename VDBMappingT>
 void VDBMappingROS<VDBMappingT>::alignedCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg)
 {
@@ -258,7 +253,7 @@ void VDBMappingROS<VDBMappingT>::alignedCloudCallback(const sensor_msgs::msg::Po
     sensor_to_map_tf =
         m_tf_buffer->lookupTransform(m_map_frame, m_sensor_frame, cloud_msg->header.stamp);
   }
-  catch (const tf2::TransformException & ex)
+  catch (const tf2::TransformException &ex)
   {
     // ROS_ERROR_STREAM("Transform to map frame failed: " << ex.what()); // TODO
     return;
@@ -273,7 +268,7 @@ void VDBMappingROS<VDBMappingT>::alignedCloudCallback(const sensor_msgs::msg::Po
       map_to_map_tf = m_tf_buffer->lookupTransform(
           m_map_frame, cloud_msg->header.frame_id, cloud_msg->header.stamp);
     }
-    catch (const tf2::TransformException & ex)
+    catch (const tf2::TransformException &ex)
     {
       // ROS_ERROR_STREAM("Transform to map frame failed: " << ex.what()); // TODO
       return;
@@ -296,9 +291,9 @@ void VDBMappingROS<VDBMappingT>::sensorCloudCallback(const sensor_msgs::msg::Poi
   {
     // Get sensor origin transform in map coordinates
     sensor_to_map_tf =
-      m_tf_buffer->lookupTransform(m_map_frame, cloud_msg->header.frame_id, cloud_msg->header.stamp);
+        m_tf_buffer->lookupTransform(m_map_frame, cloud_msg->header.frame_id, cloud_msg->header.stamp);
   }
-  catch (tf2::TransformException& ex)
+  catch (tf2::TransformException &ex)
   {
     // ROS_ERROR_STREAM("Transform to map frame failed:" << ex.what()); //TODO
     return;
