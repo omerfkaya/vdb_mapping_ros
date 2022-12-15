@@ -9,6 +9,7 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <openvdb/io/Stream.h>
+#include <vdb_mapping_ros/VDBMappingTools.h>
 
 #include "std_srvs/srv/trigger.hpp"
 #include "vdb_mapping_msgs/srv/load_map.hpp"
