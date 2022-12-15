@@ -15,11 +15,49 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+
+include_directories(include)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  "rclcpp"
+  "vdb_mapping"
+  "vdb_mapping_msgs"
+  "std_srvs"
+  "sensor_msgs"
+  "visualization_msgs"
+  "geometry_msgs"
+  "std_msgs"
+  "tf2_eigen"
+  "tf2_ros"
+  "tf2_sensor_msgs"
+  "pcl_conversions"
+  "pcl_ros"
+)
+
+
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
+
+add_executable(${PROJECT_NAME}_node src/vdb_mapping_ros_node.cpp)
+target_include_directories(${PROJECT_NAME}_node
+  PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+          $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(${PROJECT_NAME}_node ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+
+target_link_libraries(${PROJECT_NAME}_node
+  vdb_mapping::vdb_mapping
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+
+install(TARGETS
+  ${PROJECT_NAME}_node
+  DESTINATION lib/${PROJECT_NAME})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -32,4 +70,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+
+ament_export_include_directories(include)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
