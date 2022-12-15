@@ -2,7 +2,7 @@
 #include <vdb_mapping_ros/VDBMappingROS.h>
 
 template <typename VDBMappingT>
-VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("minimal_publisher")
+VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("vdb_mapping_ros")
 {
   m_resolution = 0.1;
   //   m_priv_nh.param<double>("resolution", m_resolution, 0.1);
@@ -49,14 +49,14 @@ VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("minimal_publisher")
   //   m_priv_nh.param<std::string>("sensor_frame", m_sensor_frame, "");
   if (m_sensor_frame.empty())
   {
-    // ROS_WARN_STREAM("No sensor frame specified"); //TODO
+    RCLCPP_WARN_STREAM(this->get_logger(), "No sensor frame specified");
   }
 
   m_map_frame = "map";
   // m_priv_nh.param<std::string>("map_frame", m_map_frame, "");
   if (m_map_frame.empty())
   {
-    // ROS_WARN_STREAM("No map frame specified"); //TODO
+    RCLCPP_WARN_STREAM(this->get_logger(), "No map frame specified");
   }
 
   std::string raw_points_topic = "velodyne_points";
@@ -147,7 +147,7 @@ bool VDBMappingROS<VDBMappingT>::mapResetCallback(const std::shared_ptr<std_srvs
 template <typename VDBMappingT>
 void VDBMappingROS<VDBMappingT>::resetMap()
 {
-  // ROS_INFO_STREAM("Reseting Map");//TODO
+  RCLCPP_INFO_STREAM(this->get_logger(), "Reseting Map");
   m_vdb_map->resetMap();
   publishMap();
 }
@@ -157,7 +157,7 @@ bool VDBMappingROS<VDBMappingT>::saveMap(const std::shared_ptr<std_srvs::srv::Tr
                                          std::shared_ptr<std_srvs::srv::Trigger::Response> res)
 {
   (void)(*req);
-  // ROS_INFO_STREAM("Saving Map"); //TODO
+  RCLCPP_INFO_STREAM(this->get_logger(), "Saving Map");
   res->success = m_vdb_map->saveMap();
   return res->success;
 }
@@ -166,7 +166,7 @@ template <typename VDBMappingT>
 bool VDBMappingROS<VDBMappingT>::loadMap(const std::shared_ptr<vdb_mapping_msgs::srv::LoadMap::Request> req,
                                          std::shared_ptr<vdb_mapping_msgs::srv::LoadMap::Response> res)
 {
-  // ROS_INFO_STREAM("Loading Map"); //TODO
+  RCLCPP_INFO_STREAM(this->get_logger(), "Loading Map");
   bool success = m_vdb_map->loadMap(req->path);
   publishMap();
   res->success = success;
@@ -191,7 +191,7 @@ bool VDBMappingROS<VDBMappingT>::getMapSectionCallback(const std::shared_ptr<vdb
   }
   catch (const tf2::TransformException &ex)
   {
-    // ROS_ERROR_STREAM("Transform from source to map frame failed: " << ex.what()); //TODO
+    RCLCPP_ERROR_STREAM(this->get_logger(), "Transform from source to map frame failed: " << ex.what()); 
     res->success = false;
     return true;
   }
@@ -258,7 +258,7 @@ void VDBMappingROS<VDBMappingT>::alignedCloudCallback(const sensor_msgs::msg::Po
   }
   catch (const tf2::TransformException &ex)
   {
-    // ROS_ERROR_STREAM("Transform to map frame failed: " << ex.what()); // TODO
+    RCLCPP_ERROR_STREAM(this->get_logger(), "Transform to map frame failed: " << ex.what());
     return;
   }
 
@@ -273,7 +273,7 @@ void VDBMappingROS<VDBMappingT>::alignedCloudCallback(const sensor_msgs::msg::Po
     }
     catch (const tf2::TransformException &ex)
     {
-      // ROS_ERROR_STREAM("Transform to map frame failed: " << ex.what()); // TODO
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Transform to map frame failed: " << ex.what());
       return;
     }
     pcl::transformPointCloud(*cloud, *cloud, tf2::transformToEigen(map_to_map_tf).matrix());
@@ -298,7 +298,7 @@ void VDBMappingROS<VDBMappingT>::sensorCloudCallback(const sensor_msgs::msg::Poi
   }
   catch (tf2::TransformException &ex)
   {
-    // ROS_ERROR_STREAM("Transform to map frame failed:" << ex.what()); //TODO
+    RCLCPP_ERROR_STREAM(this->get_logger(), "Transform to map frame failed:" << ex.what());
     return;
   }
   // Transform pointcloud into map reference system
