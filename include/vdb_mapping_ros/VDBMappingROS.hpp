@@ -4,8 +4,9 @@
 template <typename VDBMappingT>
 VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("vdb_mapping_ros")
 {
-  m_resolution = 0.1;
-  //   m_priv_nh.param<double>("resolution", m_resolution, 0.1);
+
+  this->declare_parameter("resolution", 0.1);
+  m_resolution = this->get_parameter("resolution").as_double();
 
   m_vdb_map = std::make_unique<VDBMappingT>(m_resolution);
   m_tf_buffer =
@@ -13,56 +14,57 @@ VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("vdb_mapping_ros")
   m_tf_listener_ =
       std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
 
-  m_config.max_range = 15.0;
-  m_config.prob_hit = 0.7;
-  m_config.prob_miss = 0.4;
-  m_config.prob_thres_min = 0.12;
-  m_config.prob_thres_max = 0.97;
-  m_config.map_directory_path = "";
-  //   m_priv_nh.param<double>("max_range", m_config.max_range, 15.0);
-  //   m_priv_nh.param<double>("prob_hit", m_config.prob_hit, 0.7);
-  //   m_priv_nh.param<double>("prob_miss", m_config.prob_miss, 0.4);
-  //   m_priv_nh.param<double>("prob_thres_min", m_config.prob_thres_min, 0.12);
-  //   m_priv_nh.param<double>("prob_thres_max", m_config.prob_thres_max, 0.97);
-  //   m_priv_nh.param<std::string>("map_save_dir", m_config.map_directory_path, "");
+  this->declare_parameter("max_range", 15.0);
+  m_config.max_range = this->get_parameter("max_range").as_double();
+  this->declare_parameter("prob_hit", 0.7);
+  m_config.prob_hit = this->get_parameter("prob_hit").as_double();
+  this->declare_parameter("prob_miss", 0.4);
+  m_config.prob_miss = this->get_parameter("prob_miss").as_double();
+  this->declare_parameter("prob_thres_min", 0.12);
+  m_config.prob_thres_min = this->get_parameter("prob_thres_min").as_double();
+  this->declare_parameter("prob_thres_max", 0.97);
+  m_config.prob_thres_max = this->get_parameter("prob_thres_max").as_double();
+  this->declare_parameter("map_save_dir", "");
+  m_config.map_directory_path = this->get_parameter("map_save_dir").as_string();
 
   //   // Configuring the VDB map
   m_vdb_map->setConfig(m_config);
 
-  m_publish_pointcloud = true;
-  m_publish_vis_marker = true;
-  m_publish_updates = false;
-  m_publish_overwrites = false;
-  m_apply_raw_sensor_data = true;
+  this->declare_parameter("publish_pointcloud", true);
+  m_publish_pointcloud = this->get_parameter("publish_pointcloud").as_bool();
+  this->declare_parameter("publish_vis_marker", true);
+  m_publish_vis_marker = this->get_parameter("publish_vis_marker").as_bool();
+  this->declare_parameter("publish_updates", false);
+  m_publish_updates = this->get_parameter("publish_updates").as_bool();
+  this->declare_parameter("publish_overwrites", false);
+  m_publish_overwrites = this->get_parameter("publish_overwrites").as_bool();
+  this->declare_parameter("apply_raw_sensor_data", true);
+  m_apply_raw_sensor_data = this->get_parameter("apply_raw_sensor_data").as_bool();
 
-  //   m_priv_nh.param<bool>("publish_pointcloud", m_publish_pointcloud, true);
-  //   m_priv_nh.param<bool>("publish_vis_marker", m_publish_vis_marker, true);
-  //   m_priv_nh.param<bool>("publish_updates", m_publish_updates, false);
-  //   m_priv_nh.param<bool>("publish_overwrites", m_publish_overwrites, false);
-  //   m_priv_nh.param<bool>("apply_raw_sensor_data", m_apply_raw_sensor_data, true);
+  this->declare_parameter("reduce_data", false);
+  m_reduce_data = this->get_parameter("reduce_data").as_bool();
 
-  m_reduce_data = false;
-
-  //   m_priv_nh.param<bool>("reduce_data", m_reduce_data, false);
-
-  m_sensor_frame = "velodyne";
-  //   m_priv_nh.param<std::string>("sensor_frame", m_sensor_frame, "");
+  this->declare_parameter("sensor_frame", "");
+  m_sensor_frame = this->get_parameter("sensor_frame").as_string();
   if (m_sensor_frame.empty())
   {
     RCLCPP_WARN_STREAM(this->get_logger(), "No sensor frame specified");
   }
 
-  m_map_frame = "map";
-  // m_priv_nh.param<std::string>("map_frame", m_map_frame, "");
+  this->declare_parameter("map_frame", "");
+  m_map_frame = this->get_parameter("map_frame").as_string();
   if (m_map_frame.empty())
   {
     RCLCPP_WARN_STREAM(this->get_logger(), "No map frame specified");
   }
 
-  std::string raw_points_topic = "velodyne_points";
-  std::string aligned_points_topic = "scan_matched_points2";
-  //   m_priv_nh.param<std::string>("raw_points", raw_points_topic, "");
-  //   m_priv_nh.param<std::string>("aligned_points", aligned_points_topic, "");
+  std::string raw_points_topic;
+  std::string aligned_points_topic;
+
+  this->declare_parameter("raw_points", "");
+  raw_points_topic = this->get_parameter("raw_points").as_string();
+  this->declare_parameter("aligned_points", "");
+  aligned_points_topic = this->get_parameter("aligned_points").as_string();
 
   /*
       // Setting up remote sources
