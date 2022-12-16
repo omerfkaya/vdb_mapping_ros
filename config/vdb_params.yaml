@@ -1,9 +1,9 @@
 vdb_mapping_ros_node:
   ros__parameters:
     aligned_points: "scan_matched_points2"
-    raw_points: "raw_points"
+    raw_points: "/velodyne_points2"
     sensor_frame: "velodyne"
-    map_frame: "map"
+    map_frame: "base_link"
     max_range: 10.0
     resolution: 0.07
     prob_hit: 0.8

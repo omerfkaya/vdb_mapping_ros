@@ -110,9 +110,9 @@ VDBMappingROS<VDBMappingT>::VDBMappingROS() : Node("vdb_mapping_ros")
 
   if (m_apply_raw_sensor_data)
   {
-    m_sensor_cloud_sub = this->create_subscription<std_msgs::msg::String>(
+    m_sensor_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         raw_points_topic, 10, std::bind(&VDBMappingROS::sensorCloudCallback, this, _1));
-    m_aligned_cloud_sub = this->create_subscription<std_msgs::msg::String>(
+    m_aligned_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         aligned_points_topic, 10, std::bind(&VDBMappingROS::alignedCloudCallback, this, _1));
   }
 
